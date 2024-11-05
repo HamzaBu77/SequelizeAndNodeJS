@@ -1,9 +1,9 @@
-"use strict";
+'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("Employees", {
+    await queryInterface.createTable('Employees', {
       id: {
         type: Sequelize.DataTypes.UUID,
         defaultValue: Sequelize.UUIDV4,
@@ -47,7 +47,8 @@ module.exports = {
     });
   },
 
+  // eslint-disable-next-line no-unused-vars
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("Employees");
+    await queryInterface.dropTable('Employees');
   },
 };

@@ -1,23 +1,33 @@
-const Employees = require("../models/employees.model");
-const UUIDHelper = require("../helpers/uuid.helper.js");
+const Employees = require('../models/employees.model');
+const Joi = require('../DTO/joi.DTO.js');
+const Departments = require('../models/departments.model.js');
 
 const create = async (req, res) => {
   try {
     const body = req?.body;
-    if (!body?.email) {
-      res.status(400).send({ Error: "Email is missing." });
+    const { error: bodyValidation } = Joi.employeeDTO.validate(body);
+    if (bodyValidation) {
+      return res.status(400).send({
+        Error: bodyValidation.details
+          ? bodyValidation.details[0].message
+          : bodyValidation.message,
+      });
     }
 
-    const newEmployee = {
-      firstName: body?.firstName,
-      lastName: body?.lastName,
-      email: body?.email,
-      phone: body?.phone,
-      hireDate: Date.now(),
-      title: body?.title,
-      departmentId: body?.departmentId,
-      salary: body?.salary,
-    };
+    body.hireDate = Date.now();
+
+    if (body?.departmentId) {
+      const department = await Departments.findOne({
+        where: {
+          id: body?.departmentId,
+          status: true,
+        },
+      });
+
+      if (!department) {
+        return res.status(400).send({ Error: 'Department does not Exists.' });
+      }
+    }
 
     const whereClause = body?.phone
       ? {
@@ -28,29 +38,24 @@ const create = async (req, res) => {
           email: body?.email,
         };
 
-    const checkEmployeeWithEmailAlreadyExistsOrCreateEmployee =
-      await Employees.findOrCreate({
-        where: whereClause,
-        defaults: newEmployee,
-      })
-        .then(([user, created]) => {
-          if (created) {
-            return res.status(201).send({
-              message: "Employee created successfully!",
-              data: user,
-            });
-          } else {
-            return res
-              .status(400)
-              .send({ Error: "Employee with email already Exists." });
-          }
-        })
-        .catch((error) => {
-          res.status(400).send({ Error: error.message });
-        });
+    const [employee, wasCreated] = await Employees.findOrCreate({
+      where: whereClause,
+      defaults: body,
+    });
+
+    if (wasCreated) {
+      return res.status(201).send({
+        message: 'Employee created successfully!',
+        data: employee,
+      });
+    } else {
+      return res
+        .status(400)
+        .send({ Error: 'Employee Already Existed with given email.' });
+    }
   } catch (error) {
     res.status(500).send({
-      message: "Internal Server Error",
+      message: 'Internal Server Error',
       Error: error.message,
     });
   }
@@ -58,21 +63,27 @@ const create = async (req, res) => {
 
 const list = async (req, res) => {
   try {
-    const listAllEmployees = await Employees.findAll({
+    const employeesList = await Employees.findAll({
       where: { status: true },
+      include: [
+        {
+          model: Departments,
+          as: 'Department',
+        },
+      ],
     });
 
-    if (listAllEmployees.length === 0) {
-      return res.status(400).send({ Error: "No Data to show." });
+    if (employeesList.length === 0) {
+      return res.status(400).send({ Error: 'No employees existed.' });
     }
 
     return res.status(200).send({
-      message: "Employees Found successfully!",
-      data: listAllEmployees,
+      message: 'Employees Found successfully!',
+      data: employeesList,
     });
   } catch (error) {
     res.status(500).send({
-      message: "Internal Server Error",
+      message: 'Internal Server Error',
       Error: error.message,
     });
   }
@@ -81,27 +92,35 @@ const list = async (req, res) => {
 const show = async (req, res) => {
   try {
     const param = req?.params;
-    if (!param?.id) {
-      return res.status(400).send({ Error: "Id is missing in parameters." });
-    }
-    if (!UUIDHelper(param?.id)) {
-      return res.status(400).send({ message: "Invalid UUID format." });
+    const { error: idValidation } = Joi.idDTO.validate(param);
+    if (idValidation) {
+      return res.status(400).send({
+        Error: idValidation.details
+          ? idValidation.details[0].message
+          : idValidation.message,
+      });
     }
     const findEmployee = await Employees.findOne({
       where: { id: param?.id, status: true },
+      include: [
+        {
+          model: Departments,
+          as: 'Department',
+        },
+      ],
     });
     if (!findEmployee) {
       return res
         .status(400)
-        .send({ Error: "No Employee existed with this id." });
+        .send({ Error: 'No Employee existed with this id.' });
     }
     return res.status(200).send({
-      message: "Employee Found Successfully!",
+      message: 'Employee Found Successfully!',
       data: findEmployee,
     });
   } catch (error) {
     res.status(500).send({
-      message: "Internal Server Error",
+      message: 'Internal Server Error',
       Error: error.message,
     });
   }
@@ -110,37 +129,98 @@ const show = async (req, res) => {
 const patch = async (req, res) => {
   try {
     const param = req?.params;
-    if (!param?.id) {
-      return res.status(400).send({ Error: "Id is missing in parameters." });
-    }
-    if (!UUIDHelper(param?.id)) {
-      return res.status(400).send({ message: "Invalid UUID format." });
+    const { error: idValidation } = Joi.idDTO.validate(param);
+    if (idValidation) {
+      return res.status(400).send({
+        Error: idValidation.details
+          ? idValidation.details[0].message
+          : idValidation.message,
+      });
     }
     const body = req?.body;
-    if (Object.keys(body).length === 0) {
-      return res.status(400).send({ Error: "No Data is given in body." });
+    const { error: bodyValidation } = Joi.updateEmployeeDTO.validate(body);
+    if (bodyValidation) {
+      return res.status(400).send({
+        Error: bodyValidation.details
+          ? bodyValidation.details[0].message
+          : bodyValidation.message,
+      });
     }
+
+    if (body?.departmentId) {
+      const findDepartment = await Departments.findOne({
+        where: {
+          id: body?.departmentId,
+          status: true,
+        },
+      });
+      if (!findDepartment) {
+        return res
+          .status(400)
+          .send({ Error: 'No department Exists with this id.' });
+      }
+    }
+
     const [count, updatedEmployee] = await Employees.update(body, {
       where: { id: param?.id, status: true },
+      returning: true,
     });
-    console.log("COUNT", count), console.log("Update", updatedEmployee);
-
     if (count === 0) {
       return res.status(400).send({
-        Error: "No Employee Updated or existed with the required Id.",
+        Error: 'Unable to Update Employee.',
       });
     }
 
     return res.status(200).send({
-      message: "Employee Updated Successfully!",
+      message: 'Employee Updated Successfully!',
       data: updatedEmployee[0],
     });
   } catch (error) {
     res.status(500).send({
-      message: "Internal Server Error",
+      message: 'Internal Server Error',
       Error: error.message,
     });
   }
 };
 
-module.exports = { create, list, show, patch };
+const remove = async (req, res) => {
+  try {
+    const param = req?.params;
+    const { error: idValidation } = Joi.idDTO.validate(param);
+    if (idValidation) {
+      return res.status(400).send({
+        Error: idValidation.details
+          ? idValidation.details[0].message
+          : idValidation.message,
+      });
+    }
+    const [count, deletedEmployee] = await Employees.update(
+      { status: false },
+      {
+        where: {
+          id: param?.id,
+          status: true,
+        },
+        returning: true,
+      }
+    );
+
+    if (count === 0) {
+      return res.status(400).send({
+        Error: 'Unable to Delete Employee.',
+      });
+    }
+
+    return res.status(200).send({
+      message: 'Employee Deleted Successfully!',
+      data: deletedEmployee[0],
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: 'Internal Server Error',
+      Error: error.message,
+    });
+  }
+};
+
+module.exports = { create, list, show, patch, remove };

@@ -112,7 +112,7 @@ const patch = async (req, res) => {
 
     if (existingDepartment) {
       return res.status(400).send({
-        Error: 'Department already exist with same name or location.',
+        Error: 'Department already exist at this location.',
       });
     }
 

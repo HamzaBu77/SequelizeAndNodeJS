@@ -29,6 +29,28 @@ const create = async (req, res) => {
       }
     }
 
+    if (body?.email) {
+      const emailExist = await Employees.findOne({
+        where: { email: body.email },
+      });
+      if (emailExist) {
+        return res.status(400).send({
+          Error: 'Employee already exists with the provided email.',
+        });
+      }
+    }
+
+    if (body?.phone) {
+      const phoneExist = await Employees.findOne({
+        where: { phone: body.phone },
+      });
+      if (phoneExist) {
+        return res.status(400).send({
+          Error: 'Employee already exists with the provided phone number.',
+        });
+      }
+    }
+
     const whereClause = body?.phone
       ? {
           email: body?.email,
@@ -147,6 +169,28 @@ const patch = async (req, res) => {
       });
     }
 
+    if (body?.email) {
+      const emailExist = await Employees.findOne({
+        where: { email: body.email },
+      });
+      if (emailExist) {
+        return res.status(400).send({
+          Error: 'Employee already exists with the provided email.',
+        });
+      }
+    }
+
+    if (body?.phone) {
+      const phoneExist = await Employees.findOne({
+        where: { phone: body.phone },
+      });
+      if (phoneExist) {
+        return res.status(400).send({
+          Error: 'Employee already exists with the provided phone number.',
+        });
+      }
+    }
+
     if (body?.departmentId) {
       const findDepartment = await Departments.findOne({
         where: {
@@ -167,7 +211,7 @@ const patch = async (req, res) => {
     });
     if (count === 0) {
       return res.status(400).send({
-        Error: 'Unable to Update Employee.',
+        Error: 'Failed to Update Employee. Please verify the ID.',
       });
     }
 

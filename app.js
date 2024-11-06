@@ -8,7 +8,7 @@ const DashboardRouter = require('./routes/dashboard.router.js');
 
 const app = Express();
 // eslint-disable-next-line no-undef
-const port = process.env.PORT;
+const PORT = process.env.PORT;
 
 app.use(Express.json());
 
@@ -19,8 +19,8 @@ app.use('/dashboard', DashboardRouter);
 try {
   SQInstance.authenticate();
   console.log('Connection has been established successfully.');
-  app.listen(port, () => {
-    console.log(`Server running on port ${port}.`);
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}.`);
   });
 } catch (error) {
   console.error('Unable to connect to the database:', error);

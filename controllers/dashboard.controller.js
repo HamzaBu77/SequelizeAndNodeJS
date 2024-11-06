@@ -15,31 +15,31 @@ const searchEmployeeAndDepartment = async (req, res) => {
       where: {
         [Sequelize.Op.or]: {
           firstName: {
-            [Sequelize.Op.substring]: query?.search,
+            [Sequelize.Op.iLike]: `%${query?.search}%`,
           },
           lastName: {
-            [Sequelize.Op.substring]: query?.search,
+            [Sequelize.Op.iLike]: `%${query?.search}%`,
           },
           phone: {
-            [Sequelize.Op.substring]: query?.search,
+            [Sequelize.Op.iLike]: `%${query?.search}%`,
           },
           email: {
-            [Sequelize.Op.substring]: query?.search,
+            [Sequelize.Op.iLike]: `%${query?.search}%`,
           },
           title: {
-            [Sequelize.Op.substring]: query?.search,
+            [Sequelize.Op.iLike]: `%${query?.search}%`,
           },
           salary: Sequelize.where(
             Sequelize.cast(Sequelize.col('salary'), 'TEXT'),
-            { [Sequelize.Op.substring]: query?.search }
+            { [Sequelize.Op.iLike]: `%${query?.search}%` }
           ),
           departmentId: Sequelize.where(
             Sequelize.cast(Sequelize.col('departmentId'), 'TEXT'),
-            { [Sequelize.Op.substring]: query?.search }
+            { [Sequelize.Op.iLike]: `%${query?.search}%` }
           ),
           hireDate: Sequelize.where(
             Sequelize.cast(Sequelize.col('hireDate'), 'TEXT'),
-            { [Sequelize.Op.substring]: query?.search }
+            { [Sequelize.Op.iLike]: `%${query?.search}%` }
           ),
         },
         status: true,
@@ -50,14 +50,14 @@ const searchEmployeeAndDepartment = async (req, res) => {
       where: {
         [Sequelize.Op.or]: {
           name: {
-            [Sequelize.Op.substring]: query?.search,
+            [Sequelize.Op.iLike]: `%${query?.search}%`,
           },
           location: {
-            [Sequelize.Op.substring]: query?.search,
+            [Sequelize.Op.iLike]: `%${query?.search}%`,
           },
           establishedAt: Sequelize.where(
             Sequelize.cast(Sequelize.col('establishedAt'), 'TEXT'),
-            { [Sequelize.Op.substring]: query?.search }
+            { [Sequelize.Op.iLike]: `%${query?.search}%` }
           ),
         },
         status: true,
